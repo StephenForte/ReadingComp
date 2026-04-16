@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reading Comp Generator — Testbed</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 2rem; }
+    h1 { margin-bottom: 0.5rem; }
+    .subtitle { color: #666; margin-bottom: 2rem; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .card { background: #fff; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    label { display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem; }
+    select, input { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+    .full-width { grid-column: 1 / -1; }
+    button { background: #2563eb; color: #fff; border: none; padding: 0.75rem 2rem; border-radius: 6px; font-size: 1rem; cursor: pointer; margin-top: 1rem; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #93c5fd; cursor: wait; }
+    .spinner { display: none; margin-left: 0.5rem; }
+    button:disabled .spinner { display: inline; }
+    #status { margin-top: 1rem; font-style: italic; color: #666; }
+    #error { color: #dc2626; margin-top: 1rem; white-space: pre-wrap; }
+    .story-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .story-meta { color: #666; font-size: 0.85rem; margin-bottom: 1rem; }
+    .story-body { line-height: 1.7; white-space: pre-wrap; }
+    .question { margin-bottom: 1.25rem; }
+    .question h3 { margin-bottom: 0.5rem; }
+    .choices { padding-left: 1.25rem; }
+    .choices li { margin-bottom: 0.25rem; list-style: none; }
+    .correct { color: #16a34a; font-weight: 600; }
+    .explanation { color: #666; font-size: 0.85rem; margin-top: 0.25rem; font-style: italic; }
+    #results { display: none; }
+    .raw-toggle { font-size: 0.85rem; color: #2563eb; cursor: pointer; text-decoration: underline; margin-top: 1rem; display: inline-block; }
+    #raw-json { display: none; background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; margin-top: 0.5rem; overflow-x: auto; white-space: pre-wrap; font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto; }
+    .timer { font-weight: 600; color: #2563eb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Reading Comp Generator</h1>
+    <p class="subtitle">Testbed for the LLM story + question module</p>
+
+    <div class="card">
+      <div class="form-grid">
+        <div>
+          <label for="provider">LLM Provider</label>
+          <select id="provider">
+            <option value="claude">Claude</option>
+            <option value="openai">OpenAI</option>
+            <option value="gemini">Gemini</option>
+          </select>
+        </div>
+        <div>
+          <label for="genre">Genre</label>
+          <select id="genre">
+            <option value="Adventure">Adventure</option>
+            <option value="Mystery">Mystery</option>
+            <option value="Science Fiction">Science Fiction</option>
+            <option value="Fantasy">Fantasy</option>
+            <option value="Superhero">Superhero</option>
+            <option value="Historical Fiction">Historical Fiction</option>
+            <option value="Animal Story">Animal Story</option>
+            <option value="Humor">Humor</option>
+          </select>
+        </div>
+        <div>
+          <label for="gender">Protagonist Gender</label>
+          <select id="gender">
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+            <option value="Non-binary">Non-binary</option>
+          </select>
+        </div>
+        <div>
+          <label for="location">Location</label>
+          <input type="text" id="location" value="A small town" placeholder="e.g. The Moon, A tropical island">
+        </div>
+        <div>
+          <label for="grade_level">Grade Level</label>
+          <select id="grade_level">
+            <option value="1">Grade 1</option>
+            <option value="2">Grade 2</option>
+            <option value="3">Grade 3</option>
+            <option value="4" selected>Grade 4</option>
+            <option value="5">Grade 5</option>
+            <option value="6">Grade 6</option>
+          </select>
+        </div>
+        <div>
+          <label for="reader_level">Reader Level</label>
+          <select id="reader_level">
+            <option value="Beginner">Beginner</option>
+            <option value="Advanced Beginner">Advanced Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced" selected>Advanced</option>
+          </select>
+        </div>
+        <div class="full-width">
+          <button id="generate" onclick="generate()">
+            Generate Story & Questions
+            <span class="spinner">⏳</span>
+          </button>
+          <div id="status"></div>
+          <div id="error"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="results">
+      <div class="card" id="story-card">
+        <div class="story-title" id="story-title"></div>
+        <div class="story-meta" id="story-meta"></div>
+        <div class="story-body" id="story-body"></div>
+      </div>
+      <div class="card" id="questions-card">
+        <h2 style="margin-bottom: 1rem;">Comprehension Questions</h2>
+        <div id="questions-list"></div>
+      </div>
+      <span class="raw-toggle" onclick="toggleRaw()">Show/Hide Raw JSON</span>
+      <pre id="raw-json"></pre>
+    </div>
+  </div>
+
+  <script>
+    let timerInterval = null;
+
+    async function generate() {
+      const btn = document.getElementById("generate");
+      const status = document.getElementById("status");
+      const error = document.getElementById("error");
+      const results = document.getElementById("results");
+
+      btn.disabled = true;
+      error.textContent = "";
+      results.style.display = "none";
+
+      let seconds = 0;
+      status.innerHTML = `Waiting for LLM response... <span class="timer">0s</span>`;
+      timerInterval = setInterval(() => {
+        seconds++;
+        status.innerHTML = `Waiting for LLM response... <span class="timer">${seconds}s</span>`;
+      }, 1000);
+
+      const payload = {
+        provider: document.getElementById("provider").value,
+        genre: document.getElementById("genre").value,
+        gender: document.getElementById("gender").value,
+        location: document.getElementById("location").value,
+        grade_level: parseInt(document.getElementById("grade_level").value),
+        reader_level: document.getElementById("reader_level").value,
+      };
+
+      try {
+        const res = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        clearInterval(timerInterval);
+
+        if (!res.ok) {
+          error.textContent = data.error || `HTTP ${res.status}`;
+          if (data.raw_response) {
+            error.textContent += "\n\nRaw LLM response:\n" + data.raw_response;
+          }
+          status.textContent = `Failed after ${seconds}s`;
+          btn.disabled = false;
+          return;
+        }
+
+        renderResults(data);
+        status.textContent = `Completed in ${seconds}s`;
+      } catch (err) {
+        clearInterval(timerInterval);
+        error.textContent = `Network error: ${err.message}`;
+        status.textContent = "Failed";
+      }
+
+      btn.disabled = false;
+    }
+
+    function renderResults(data) {
+      const results = document.getElementById("results");
+      results.style.display = "block";
+
+      document.getElementById("story-title").textContent = data.story.title;
+      document.getElementById("story-meta").textContent =
+        `${data.story.genre} · Grade ${data.story.grade_level} · ${data.story.reader_level} · ${data.story.protagonist_name} (${data.story.protagonist_gender}) · ${data.story.location}`;
+      document.getElementById("story-body").textContent = data.story.body;
+
+      const list = document.getElementById("questions-list");
+      list.innerHTML = "";
+
+      data.questions.forEach((q) => {
+        const div = document.createElement("div");
+        div.className = "question";
+        div.innerHTML = `
+          <h3>Q${q.question_number}: ${escapeHtml(q.question)}</h3>
+          <ul class="choices">
+            ${["A", "B", "C", "D"].map((letter) =>
+              `<li class="${letter === q.correct_answer ? "correct" : ""}">${letter}. ${escapeHtml(q.choices[letter])}${letter === q.correct_answer ? " ✓" : ""}</li>`
+            ).join("")}
+          </ul>
+          <div class="explanation">${escapeHtml(q.explanation)}</div>
+        `;
+        list.appendChild(div);
+      });
+
+      document.getElementById("raw-json").textContent = JSON.stringify(data, null, 2);
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function toggleRaw() {
+      const el = document.getElementById("raw-json");
+      el.style.display = el.style.display === "none" ? "block" : "none";
+    }
+  </script>
+</body>
+</html>
