@@ -1,0 +1,17 @@
+{
+  "name": "reading-comp-api",
+  "version": "1.0.0",
+  "description": "LLM-powered reading comprehension story and question generator",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/generative-ai": "^0.24.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "openai": "^4.77.0"
+  }
+}
