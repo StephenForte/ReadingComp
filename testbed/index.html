@@ -47,9 +47,8 @@
         <div>
           <label for="provider">LLM Provider</label>
           <select id="provider">
-            <option value="claude">Claude</option>
-            <option value="openai">OpenAI</option>
-            <option value="gemini">Gemini</option>
+            <option value="gemma-cloud" selected>Gemma (Cloud)</option>
+            <option value="lmstudio">LM Studio (Local)</option>
           </select>
         </div>
         <div>
@@ -64,6 +63,10 @@
             <option value="Animal Story">Animal Story</option>
             <option value="Humor">Humor</option>
           </select>
+        </div>
+        <div>
+          <label for="protagonist_name">Protagonist Name</label>
+          <input type="text" id="protagonist_name" value="Nova" placeholder="e.g. Nova, Marcus, Sam">
         </div>
         <div>
           <label for="gender">Protagonist Gender</label>
@@ -146,6 +149,7 @@
       const payload = {
         provider: document.getElementById("provider").value,
         genre: document.getElementById("genre").value,
+        protagonist_name: document.getElementById("protagonist_name").value,
         gender: document.getElementById("gender").value,
         location: document.getElementById("location").value,
         grade_level: parseInt(document.getElementById("grade_level").value),

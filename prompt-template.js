@@ -1,8 +1,9 @@
-function buildPrompt({ genre, gender, location, grade_level, reader_level }) {
+function buildPrompt({ genre, gender, protagonist_name, location, grade_level, reader_level }) {
   return `You are a children's educational content writer and reading comprehension specialist. Your job is to write an original short story and exactly 5 multiple choice reading comprehension questions based on the parameters provided. You must return your response as valid JSON only — no preamble, no explanation, no markdown code fences.
 
 STORY PARAMETERS:
 - Genre: ${genre}
+- Protagonist Name: ${protagonist_name}
 - Protagonist Gender: ${gender}
 - Location: ${location}
 - Grade Level: ${grade_level}
