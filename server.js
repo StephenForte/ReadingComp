@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const { buildPrompt } = require("./prompt-template");
 const { callLLM } = require("./llm-providers");
+const { getUserRank } = require("./rank-engine");
 
 const app = express();
 app.use(cors());
@@ -99,6 +100,15 @@ app.post("/api/generate", async (req, res) => {
     return res.status(502).json({
       error: `LLM call failed: ${err.message}`,
     });
+  }
+});
+
+app.get("/api/rank/:userId", (req, res) => {
+  try {
+    const result = getUserRank(req.params.userId);
+    res.json(result);
+  } catch (err) {
+    res.status(404).json({ error: err.message });
   }
 });
 

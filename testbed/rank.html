@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rank Engine — Testbed</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 2rem; }
+    h1 { margin-bottom: 0.5rem; }
+    .subtitle { color: #666; margin-bottom: 2rem; }
+    .container { max-width: 600px; margin: 0 auto; }
+    .card { background: #fff; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    label { display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem; }
+    input { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+    button { background: #2563eb; color: #fff; border: none; padding: 0.75rem 2rem; border-radius: 6px; font-size: 1rem; cursor: pointer; margin-top: 1rem; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #93c5fd; cursor: wait; }
+    #error { color: #dc2626; margin-top: 1rem; }
+    #results { display: none; }
+    .rank-display { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
+    .rank-box { flex: 1; background: #eff6ff; border: 2px solid #2563eb; border-radius: 8px; padding: 1rem; text-align: center; }
+    .rank-label { font-size: 0.85rem; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .rank-value { font-size: 2.5rem; font-weight: 700; color: #1e3a8a; line-height: 1; margin-top: 0.25rem; }
+    .reason { color: #555; font-size: 0.95rem; padding: 0.75rem; background: #f9fafb; border-left: 3px solid #2563eb; border-radius: 4px; }
+    .raw-toggle { font-size: 0.85rem; color: #2563eb; cursor: pointer; text-decoration: underline; margin-top: 1rem; display: inline-block; }
+    #raw-json { display: none; background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; margin-top: 0.5rem; white-space: pre-wrap; font-family: monospace; font-size: 0.85rem; }
+    .nav { margin-bottom: 1rem; }
+    .nav a { color: #2563eb; text-decoration: none; font-size: 0.9rem; }
+    .nav a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav"><a href="/">← Story Generator</a></div>
+    <h1>Rank Engine</h1>
+    <p class="subtitle">Look up a user's current GradeLevel and ReaderLevel</p>
+
+    <div class="card">
+      <label for="userId">User ID</label>
+      <input type="text" id="userId" value="1" placeholder="e.g. 1" autofocus>
+      <button id="lookup" onclick="lookup()">Get Rank</button>
+      <div id="error"></div>
+    </div>
+
+    <div id="results">
+      <div class="card">
+        <div class="rank-display">
+          <div class="rank-box">
+            <div class="rank-label">Grade Level</div>
+            <div class="rank-value" id="gradeLevel">—</div>
+          </div>
+          <div class="rank-box">
+            <div class="rank-label">Reader Level</div>
+            <div class="rank-value" id="readerLevel">—</div>
+          </div>
+        </div>
+        <div class="reason" id="reason"></div>
+        <span class="raw-toggle" onclick="toggleRaw()">Show/Hide Raw JSON</span>
+        <pre id="raw-json"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("userId").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") lookup();
+    });
+
+    async function lookup() {
+      const btn = document.getElementById("lookup");
+      const error = document.getElementById("error");
+      const results = document.getElementById("results");
+      const userId = document.getElementById("userId").value.trim();
+
+      error.textContent = "";
+      results.style.display = "none";
+
+      if (!userId) {
+        error.textContent = "Please enter a User ID";
+        return;
+      }
+
+      btn.disabled = true;
+      try {
+        const res = await fetch(`/api/rank/${encodeURIComponent(userId)}`);
+        const data = await res.json();
+        if (!res.ok) {
+          error.textContent = data.error || `HTTP ${res.status}`;
+          return;
+        }
+        document.getElementById("gradeLevel").textContent = data.gradeLevel;
+        document.getElementById("readerLevel").textContent = data.readerLevel;
+        document.getElementById("reason").textContent = data.reason || "";
+        document.getElementById("raw-json").textContent = JSON.stringify(data, null, 2);
+        results.style.display = "block";
+      } catch (err) {
+        error.textContent = `Network error: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function toggleRaw() {
+      const el = document.getElementById("raw-json");
+      el.style.display = el.style.display === "none" ? "block" : "none";
+    }
+
+    // Auto-lookup on load
+    lookup();
+  </script>
+</body>
+</html>
