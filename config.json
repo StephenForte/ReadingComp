@@ -1,7 +1,15 @@
 {
-  "data_source": {
-    "type": "csv",
-    "path": "./studentdata.csv"
+  "active_data_source": "csv",
+  "data_sources": {
+    "csv": {
+      "type": "csv",
+      "path": "./studentdata.csv"
+    },
+    "airtable": {
+      "type": "airtable",
+      "base_id": "appdv5ZN2WJOj8gQO",
+      "table_id": "tblMVOMdW6H2mqVlo"
+    }
   },
   "active_provider": "gemma-cloud",
   "providers": {

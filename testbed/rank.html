@@ -37,8 +37,27 @@
     <p class="subtitle">Look up a user's current GradeLevel and ReaderLevel</p>
 
     <div class="card">
-      <label for="userId">User ID</label>
+      <label for="source">Data Source</label>
+      <select id="source"><option value="">(loading…)</option></select>
+
+      <label for="userId" style="margin-top:1rem;">User ID</label>
       <input type="text" id="userId" value="1" placeholder="e.g. 1" autofocus>
+
+      <details style="margin-top:1rem;">
+        <summary style="cursor:pointer; font-size:0.9rem; color:#555;">Override current rank (optional)</summary>
+        <div style="display:flex; gap:1rem; margin-top:0.75rem;">
+          <div style="flex:1;">
+            <label for="currentGrade">Current Grade</label>
+            <input type="number" id="currentGrade" min="3" max="8" placeholder="3-8">
+          </div>
+          <div style="flex:1;">
+            <label for="currentReaderLevel">Current Reader Level</label>
+            <input type="number" id="currentReaderLevel" min="1" max="4" placeholder="1-4">
+          </div>
+        </div>
+        <div style="font-size:0.8rem; color:#777; margin-top:0.4rem;">If left blank, the engine derives the current rank from the user's most recent quiz.</div>
+      </details>
+
       <button id="lookup" onclick="lookup()">Get Rank</button>
       <div id="error"></div>
     </div>
@@ -67,11 +86,32 @@
       if (e.key === "Enter") lookup();
     });
 
+    async function loadSources() {
+      try {
+        const res = await fetch("/api/data-sources");
+        const data = await res.json();
+        const sel = document.getElementById("source");
+        sel.innerHTML = "";
+        for (const name of data.sources) {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name + (name === data.active ? " (default)" : "");
+          if (name === data.active) opt.selected = true;
+          sel.appendChild(opt);
+        }
+      } catch (err) {
+        document.getElementById("error").textContent = `Could not load sources: ${err.message}`;
+      }
+    }
+
     async function lookup() {
       const btn = document.getElementById("lookup");
       const error = document.getElementById("error");
       const results = document.getElementById("results");
       const userId = document.getElementById("userId").value.trim();
+      const source = document.getElementById("source").value;
+      const currentGrade = document.getElementById("currentGrade").value.trim();
+      const currentReaderLevel = document.getElementById("currentReaderLevel").value.trim();
 
       error.textContent = "";
       results.style.display = "none";
@@ -80,10 +120,19 @@
         error.textContent = "Please enter a User ID";
         return;
       }
+      if ((currentGrade && !currentReaderLevel) || (!currentGrade && currentReaderLevel)) {
+        error.textContent = "If overriding, supply BOTH Current Grade and Current Reader Level (or neither)";
+        return;
+      }
 
       btn.disabled = true;
       try {
-        const res = await fetch(`/api/rank/${encodeURIComponent(userId)}`);
+        const params = new URLSearchParams();
+        if (source) params.set("source", source);
+        if (currentGrade) params.set("currentGrade", currentGrade);
+        if (currentReaderLevel) params.set("currentReaderLevel", currentReaderLevel);
+        const qs = params.toString() ? `?${params}` : "";
+        const res = await fetch(`/api/rank/${encodeURIComponent(userId)}${qs}`);
         const data = await res.json();
         if (!res.ok) {
           error.textContent = data.error || `HTTP ${res.status}`;
@@ -106,8 +155,8 @@
       el.style.display = el.style.display === "none" ? "block" : "none";
     }
 
-    // Auto-lookup on load
-    lookup();
+    // Load sources, then auto-lookup
+    loadSources().then(lookup);
   </script>
 </body>
 </html>

@@ -103,12 +103,28 @@ app.post("/api/generate", async (req, res) => {
   }
 });
 
-app.get("/api/rank/:userId", (req, res) => {
+app.get("/api/rank/:userId", async (req, res) => {
   try {
-    const result = getUserRank(req.params.userId);
+    const opts = {};
+    if (req.query.source) opts.source = req.query.source;
+    if (req.query.currentGrade) opts.currentGrade = parseInt(req.query.currentGrade, 10);
+    if (req.query.currentReaderLevel) opts.currentReaderLevel = parseInt(req.query.currentReaderLevel, 10);
+    const result = await getUserRank(req.params.userId, opts);
     res.json(result);
   } catch (err) {
     res.status(404).json({ error: err.message });
+  }
+});
+
+app.get("/api/data-sources", (req, res) => {
+  try {
+    const config = loadConfig();
+    res.json({
+      active: config.active_data_source || null,
+      sources: config.data_sources ? Object.keys(config.data_sources) : [],
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
